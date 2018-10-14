@@ -1,0 +1,27 @@
+#!/bin/sh
+pushd ~/dba/oid >/dev/null
+
+REALM=$(echo "$2" | tr '[:upper:]' '[:lower:]')
+if [[ -n $REALM ]]; then
+  DC=",dc=$REALM"
+else
+  unset DC
+fi
+
+PATH=/usr/bin:$PATH
+
+for p in oid.params.[0-9]; do
+  . "$p"
+  echo "Connecting to $OID_HOST:$OID_PORT"
+  ldapdelete -r -h "$OID_HOST" -p "$OID_PORT" -D "$OID_ADMIN" -w "$OID_ADMIN_PWD" "cn=$1,${OID_CONTEXT}${DC}"
+done
+
+#if [ -n "$REALM" ]; then
+#  rm -v $REALM/aliases/$1.ldif 2>/dev/null
+#  sed -i -r "/^$1\$/ d" $REALM/aliases.lst
+#else
+#  rm -v aliases/$1.ldif 2>/dev/null
+#  sed -i -r "/^$1\$/ d" aliases.lst
+#fi
+
+popd >/dev/null

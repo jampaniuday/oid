@@ -1,0 +1,26 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+source ./oid.params
+
+REALM=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+if [ -n "$REALM" ]; then
+  DC=",dc=$REALM"
+  mkdir -p "$REALM"/aliases
+  echo "== Getting aliases for \"$REALM\" context"
+else
+  REALM=.
+  echo "== Getting aliases for default context"
+fi
+
+PATH=$ORACLE_HOME/bin:$PATH
+
+if [[ $OS == 'Darwin' ]]; then
+  OPT='-x'
+else
+  unset OPT
+fi
+
+ldapsearch -L -h "$OID_HOST" -p "$OID_PORT" -b "${OID_CONTEXT}${DC}" $OPT '(objectclass=orclNetServiceAlias)' cn | grep -E '^cn:' | awk '{print($2)}' | sort > "$REALM"/aliases.lst
+
+popd >/dev/null

@@ -1,0 +1,13 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+./oid_get_services_list
+grep -v '^#' realms.lst | while read -r r; do
+  ./oid_get_services_list "$r"
+done
+./oid_get_aliases_list
+grep -v '^#' realms.lst | while read -r r; do
+  ./oid_get_aliases_list "$r"
+done
+
+popd >/dev/null

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+SERVICE=$(echo "${1%.ldif}" | tr '[:upper:]' '[:lower:]')
+REALM=$(echo "$2" | tr '[:upper:]' '[:lower:]')
+REALM=${REALM:-'.'}
+
+PATH=$ORACLE_HOME/bin:$PATH
+
+pushd ~/dba/oid >/dev/null
+
+for p in oid.params.[0-9]; do
+  source ./"$p"
+  echo "Connecting to ${OID_HOST}:${OID_PORT}"
+  ldapadd -h "${OID_HOST}" -p "${OID_PORT}" -D "${OID_ADMIN}" -w "${OID_ADMIN_PWD}" -f "${REALM}/services/${SERVICE}.ldif"
+done
+
+popd >/dev/null

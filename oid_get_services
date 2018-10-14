@@ -1,0 +1,33 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+source ./oid.params
+
+REALM=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+if [[ -n $REALM ]]; then
+  DC=",dc=$REALM"
+  mkdir -p "$REALM"/services
+  echo "== Getting services for \"$REALM\" context"
+else
+  REALM=.
+  unset DC
+  echo "== Getting services for default context"
+fi
+
+PATH=$ORACLE_HOME/bin:$PATH
+
+if [[ $OS == 'Darwin' ]]; then
+  OPT='-x'
+else
+  unset OPT
+fi
+
+ldapsearch -L -h "$OID_HOST" -p "$OID_PORT" -b "${OID_CONTEXT}${DC}" $OPT '(objectclass=orclService)' cn | grep -E '^cn:' | awk '{print($2)}' | sort > "$REALM"/services.lst
+# get ldifs for services
+find "$REALM"/services -name '*.ldif' -type f -delete
+grep -v '^#' "$REALM"/services.lst | while read -r S; do
+  echo "Get description for service $S ..."
+  ldapsearch -LLL -T createtimestamp -h "$OID_HOST" -p "$OID_PORT" -b "cn=$S,${OID_CONTEXT}${DC}" $OPT '(objectclass=*)' | perl -0777pe 's/\n //g' | sed -r '/^authpassword/d;s/,[ \t]*cn=/,cn=/g;s/[ \t]+$//g' > "$REALM/services/$S.ldif"
+done
+
+popd >/dev/null

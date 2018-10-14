@@ -1,0 +1,5 @@
+#!/bin/sh
+"$(dirname "$0")"/oid_del_all_aliases "$1"
+"$(dirname "$0")"/oid_del_all_services "$1"
+"$(dirname "$0")"/oid_add_all_services "$1"
+"$(dirname "$0")"/oid_add_all_aliases "$1"

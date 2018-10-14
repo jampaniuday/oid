@@ -1,0 +1,27 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+source ./oid.params
+
+REALM=$(echo "$1" | tr '[:upper:]' '[:lower:]')
+if [[ -n $REALM ]]; then
+  DC=",dc=$REALM"
+  mkdir -p "$REALM"/services
+  echo "== Getting services for \"$REALM\" context"
+else
+  REALM=.
+  unset DC
+  echo "== Getting services for default context"
+fi
+
+PATH=$ORACLE_HOME/bin:$PATH
+
+if [[ $OS == 'Darwin' ]]; then
+  OPT='-x'
+else
+  unset OPT
+fi
+
+ldapsearch -L -h "$OID_HOST" -p "$OID_PORT" -b "${OID_CONTEXT}${DC}" $OPT '(objectclass=orclService)' cn | grep -E '^cn:' | awk '{print($2)}' | sort > "$REALM"/services.lst
+
+popd >/dev/null

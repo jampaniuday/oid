@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# This script deletes netService records from OID server defined in oid.params.[0-9] files
+#
+pushd ~/dba/oid >/dev/null
+
+REALM=$(echo "$2" | tr '[:upper:]' '[:lower:]')
+if [[ -n $REALM ]]; then
+  DC=",dc=$REALM"
+else
+  unset DC
+fi
+
+PATH=/usr/bin:$PATH
+
+for p in oid.params.[0-9]; do
+  . "$p"
+  echo "Connecting to $OID_HOST:$OID_PORT"
+  ldapdelete -r -h "$OID_HOST" -p "$OID_PORT" -D "$OID_ADMIN" -w "$OID_ADMIN_PWD" "cn=$1,${OID_CONTEXT}${DC}"
+done
+
+#if [ -n "$REALM" ]; then
+#  rm -v $REALM/services/$1.ldif
+#  sed -i -r "/^$1\$/ d" $REALM/services.lst
+#else
+#  rm -v services/$1.ldif
+#  sed -i -r "/^$1\$/ d" services.lst
+#fi
+
+popd >/dev/null

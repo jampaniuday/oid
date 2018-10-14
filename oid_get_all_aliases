@@ -1,0 +1,9 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+./oid_get_aliases
+grep -v '^#' realms.lst | while read -r r; do
+  ./oid_get_aliases "$r"
+done
+
+popd >/dev/null

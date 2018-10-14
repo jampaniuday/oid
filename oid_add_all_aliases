@@ -1,0 +1,18 @@
+#!/bin/bash
+pushd ~/dba/oid >/dev/null
+
+for s in aliases/*.ldif; do
+  S=$(basename "$s")
+  S=${S%.ldif}
+  oid_add_alias "$S"
+done
+
+grep -v '^#' realms.lst | while read -r r; do
+  for s in "$r"/aliases/*.ldif; do
+    S=$(basename "$s")
+    S=${S%.ldif}
+    oid_add_alias "$S" "$r"
+  done
+done
+
+popd >/dev/null

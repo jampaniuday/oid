@@ -1,0 +1,36 @@
+# This is just some commands and examples
+
+# Save password of "cn=orcladmin" in ORCLADMIN_PWD variable
+
+# Enable anonymous access to OID
+$ORACLE_HOME/bin/ldapmodify -h $OID_HOST -p $OID_PORT -D cn=orcladmin -w $ORCLADMIN_PWD -f enable_anonymous_binds.ldif
+
+# Search for all records in the context
+$ORACLE_HOME/bin/ldapsearch -LLL -h $OID_HOST -p $OID_PORT -b "cn=OracleContext,dc=<realm name>" -x '(objectclass=*)'
+
+# Register database/instance in OID (won't work with openLDAP)
+read -p 'Enter wallet password: ' -r WALLET_PWD; read -p 'Enter OID password: ' -r OID_PWD; dbca -silent -configureDatabase -sourceDB $ORACLE_SID -registerWithDirService true -dirServiceUserName "cn=orcladmin" -dirServicePassword $OID_PWD -walletPassword "$WALLET_PWD"
+
+# Create new Realm (run on OID server host):
+read -p 'Enter wallet password: ' -r WALLET_PWD; H=$(hostname -f); ORACLE_HOME=$IDM_HOME
+for r in $(cat realms.lst); do echo "$WALLET_PWD" | $IDM_HOME/ldap/bin/oidrealm $H 3060 "dc=$r"; done
+
+# SSH tunnel to OID in AWS via bastion host:
+ssh -f -N -L 9001:$OID_HOST:9001 -L 3060:$OID_HOST:3060 bastion-host
+
+# Search for an entry
+ldapsearch -L -h $OID_HOST -p $OID_PORT -D $OID_ADMIN -w $OID_ADMIN_PASS -b "cn=<tns name>,cn=OracleContext,dc=<realm name>" '(objectclass=orclService)'
+
+# Search for an entry. The perl command at the end avoids line truncation in the output
+ldapsearch -LL -h $OID_HOST -p $OID_PORT -D $OID_ADMIN -w $OID_ADMIN_PASS -b "cn=<tns name>,cn=OracleContext,dc=<realm name>" '(objectclass=*)' | perl -p0e 's/\n //g'
+
+# Adding a new service entry 
+ldapadd -h $OID_HOST -p $OID_PORT -D $OID_ADMIN -w $OID_ADMIN_PASS -f <realm name>/services/<tns name>.ldif 
+
+# Delete an entry
+ldapdelete -r -h $OID_HOST -p $OID_PORT -D $OID_ADMIN -w $OID_ADMIN_PASS "cn=<tns name>,cn=OracleContext,dc=<realm name>"
+
+# Add alias to "default" context
+ldapadd -h $OID_HOST -p $OID_PORT -D $OID_ADMIN -w $OID_ADMIN_PASS -f aliases/<tns name>.ldif
+
+

@@ -1,0 +1,4 @@
+dn: cn=oid1,cn=osdldapd,cn=subconfigsubentry
+changetype: modify
+replace: orclAnonymousBindsFlag
+orclAnonymousBindsFlag: 0
